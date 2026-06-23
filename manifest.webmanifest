@@ -1,0 +1,20 @@
+{
+  "name": "Un saluto per gli sposi · Ein Gruß für das Brautpaar",
+  "short_name": "Saluti agli sposi",
+  "description": "Registra un video di auguri per Alica & Emanuele. · Nimm ein Video-Grußwort für Alica & Emanuele auf.",
+  "lang": "it",
+  "dir": "ltr",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone"],
+  "orientation": "portrait",
+  "background_color": "#0E4753",
+  "theme_color": "#0E4753",
+  "categories": ["lifestyle", "photo", "social"],
+  "icons": [
+    { "src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "./icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "./icons/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

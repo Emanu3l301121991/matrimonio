@@ -1,0 +1,713 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no, maximum-scale=1" />
+<meta name="theme-color" content="#0E4753" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Saluti agli sposi" />
+<meta name="mobile-web-app-capable" content="yes" />
+<title>Un saluto per gli sposi · Ein Gruß für das Brautpaar</title>
+<link rel="manifest" href="./manifest.webmanifest" />
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+<link rel="icon" href="./icons/favicon-64.png" sizes="64x64" type="image/png" />
+<style>
+  /* ---- Token: tramonto mediterraneo (golden hour sul mare) ---- */
+  :root{
+    --sky-1:#F7D3B2;   /* cielo apricot     */
+    --sky-2:#E9967A;   /* corallo del dusk  */
+    --sea-1:#277A8A;   /* teal mare         */
+    --sea-2:#0E4753;   /* mare profondo     */
+    --sand:#FBF6EF;    /* sabbia chiara     */
+    --sun:#F4C478;     /* sole              */
+    --coral:#D9695A;   /* accento / cuore   */
+    --gold:#C9A24B;    /* dettaglio elegante*/
+    --ink:#2A2622;     /* testo scuro       */
+    --ink-soft:#6c615a;
+    --ring: 320;       /* circonferenza ring (px*π aprox) */
+    --serif: "Iowan Old Style","Palatino Linotype",Palatino,"URW Palladio L",Georgia,"Times New Roman",serif;
+    --sans: ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ height:100%; margin:0; }
+  body{
+    font-family:var(--sans);
+    color:var(--ink);
+    background:var(--sea-2);
+    overflow:hidden;
+    overscroll-behavior:none;
+    touch-action:manipulation;
+    -webkit-user-select:none; user-select:none;
+    -webkit-touch-callout:none;
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration:.001ms !important; transition-duration:.001ms !important; }
+  }
+
+  #app{ position:fixed; inset:0; }
+  .screen{
+    position:absolute; inset:0;
+    display:none; flex-direction:column; align-items:center; justify-content:center;
+    padding:max(28px,env(safe-area-inset-top)) 26px max(28px,env(safe-area-inset-bottom));
+    text-align:center;
+  }
+  .screen.active{ display:flex; animation:fade .5s ease both; }
+  @keyframes fade{ from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:none} }
+
+  /* ---- Sfondo tramonto + onda (firma visiva) ---- */
+  .sky{
+    position:absolute; inset:0; z-index:0;
+    background:
+      radial-gradient(120% 80% at 50% 86%, rgba(244,196,120,.55), transparent 55%),
+      linear-gradient(180deg, var(--sky-1) 0%, var(--sky-2) 46%, var(--sea-1) 62%, var(--sea-2) 100%);
+  }
+  .sun-orb{
+    position:absolute; left:50%; top:54%; width:34vmin; height:34vmin; transform:translate(-50%,-50%);
+    border-radius:50%;
+    background:radial-gradient(circle at 50% 45%, #fff5e0, var(--sun) 58%, rgba(244,196,120,0) 72%);
+    filter:blur(.3px); z-index:0; opacity:.92;
+  }
+  .waves{ position:absolute; left:0; right:0; bottom:0; height:38vh; z-index:0; overflow:hidden; }
+  .waves svg{ position:absolute; bottom:0; width:200%; height:100%; }
+  .wave1{ animation:drift 14s linear infinite; opacity:.55; }
+  .wave2{ animation:drift 22s linear infinite reverse; opacity:.85; }
+  @keyframes drift{ from{transform:translateX(0)} to{transform:translateX(-50%)} }
+
+  .stage{ position:relative; z-index:2; width:100%; max-width:560px; }
+
+  /* ---- Tipografia ---- */
+  .eyebrow{
+    font-family:var(--sans); font-size:.86rem; letter-spacing:.26em; text-transform:uppercase;
+    color:var(--sea-2); opacity:.85; margin:0 0 18px;
+  }
+  .names{ font-family:var(--serif); font-weight:500; line-height:1; margin:0;
+    font-size:clamp(1.7rem,8.6vw,3.6rem); color:var(--sea-2); letter-spacing:.01em;
+    white-space:nowrap; }
+  .names .amp{ color:var(--coral); font-style:italic; padding:0 .12em; }
+  .date{ font-family:var(--serif); font-size:clamp(1.15rem,5.2vw,1.6rem); letter-spacing:.34em;
+    color:var(--ink); margin:14px 0 2px; }
+  .place{ font-size:.92rem; letter-spacing:.18em; text-transform:uppercase; color:var(--ink-soft); margin:0; }
+
+  /* ---- Pulsante "sole" di registrazione ---- */
+  .sun-btn-wrap{ position:relative; margin:clamp(24px,6vh,46px) auto 8px; width:224px; height:224px; }
+  .ring-svg{ position:absolute; inset:0; transform:rotate(-90deg); pointer-events:none; }
+  .ring-track{ fill:none; stroke:rgba(255,255,255,.45); stroke-width:7; }
+  .ring-prog{ fill:none; stroke:var(--coral); stroke-width:7; stroke-linecap:round;
+    stroke-dasharray:var(--ring); stroke-dashoffset:0; }
+  .sun-btn{
+    position:absolute; inset:18px; border:none; border-radius:50%; cursor:pointer;
+    background:radial-gradient(circle at 50% 38%, #fff7e8, var(--sun) 62%, #eaa75e 100%);
+    box-shadow:0 18px 40px rgba(217,105,90,.35), inset 0 -10px 26px rgba(201,162,75,.35);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px;
+    color:var(--sea-2); transition:transform .15s ease, box-shadow .3s ease;
+    animation:glow 3.6s ease-in-out infinite;
+  }
+  @keyframes glow{ 0%,100%{box-shadow:0 18px 40px rgba(217,105,90,.30), inset 0 -10px 26px rgba(201,162,75,.35)}
+                   50%{box-shadow:0 22px 54px rgba(244,196,120,.55), inset 0 -10px 26px rgba(201,162,75,.45)} }
+  .sun-btn:active{ transform:scale(.96); }
+  .sun-btn .cam{ font-size:2.6rem; line-height:1; }
+  .sun-btn .lbl-it{ font-family:var(--serif); font-size:1.2rem; font-weight:600; }
+  .sun-btn .lbl-de{ font-size:.84rem; letter-spacing:.04em; color:#6b4d23; font-style:italic; }
+
+  .hint{ margin:14px auto 0; max-width:34ch; color:var(--sea-2); font-size:1.04rem; line-height:1.5;
+    text-shadow:0 0 9px rgba(251,246,239,.9), 0 1px 2px rgba(251,246,239,.8); }
+  .hint b{ color:var(--coral); }
+  .hint .de{ display:block; color:#143b43; font-weight:600; font-style:italic; font-size:.96rem; margin-top:3px;
+    text-shadow:0 0 9px rgba(251,246,239,.95), 0 1px 2px rgba(251,246,239,.85); }
+
+  /* ---- Schermata registrazione (camera a tutto schermo) ---- */
+  #record, #review{ padding:0; }
+  .cam-feed, .cam-review{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; background:#000; z-index:0; }
+  .cam-feed{ transform:scaleX(-1); }              /* specchio per la preview selfie */
+  .rec-overlay{ position:absolute; inset:0; z-index:3; display:flex; flex-direction:column;
+    justify-content:space-between; padding:max(20px,env(safe-area-inset-top)) 20px max(26px,env(safe-area-inset-bottom));
+    pointer-events:none; }
+  .rec-top{ display:flex; align-items:center; justify-content:center; gap:12px; }
+  .rec-pill{ display:inline-flex; align-items:center; gap:10px; padding:9px 16px; border-radius:999px;
+    background:rgba(14,71,83,.55); backdrop-filter:blur(8px); color:#fff; font-variant-numeric:tabular-nums; }
+  .rec-dot{ width:11px; height:11px; border-radius:50%; background:var(--coral); animation:blink 1s steps(2) infinite; }
+  @keyframes blink{ 50%{opacity:.25} }
+  .rec-time{ font-family:var(--serif); font-size:1.25rem; letter-spacing:.06em; }
+  .rec-time small{ opacity:.7; font-size:.7em; }
+  .rec-bottom{ display:flex; align-items:center; justify-content:center; pointer-events:auto; }
+  .stop-btn{ width:88px; height:88px; border-radius:50%; border:5px solid rgba(255,255,255,.85);
+    background:rgba(255,255,255,.12); display:flex; align-items:center; justify-content:center; cursor:pointer; }
+  .stop-btn .sq{ width:30px; height:30px; border-radius:7px; background:var(--coral); }
+
+  /* ---- Revisione ---- */
+  .review-bar{ position:absolute; left:0; right:0; bottom:0; z-index:3;
+    padding:18px 18px max(22px,env(safe-area-inset-bottom));
+    background:linear-gradient(180deg, transparent, rgba(14,71,83,.78) 36%);
+    display:flex; flex-direction:column; gap:12px; align-items:center; }
+  .review-q{ color:#fff; font-family:var(--serif); font-size:1.2rem; }
+  .review-q .de{ display:block; font-size:.82rem; font-style:italic; opacity:.85; }
+  .review-actions{ display:flex; gap:12px; width:100%; max-width:460px; }
+
+  /* ---- Bottoni generici ---- */
+  .btn{ flex:1; border:none; cursor:pointer; padding:15px 18px; border-radius:16px; font-size:1rem;
+    font-family:var(--sans); font-weight:600; line-height:1.2; transition:transform .12s ease, filter .2s ease; }
+  .btn:active{ transform:scale(.97); }
+  .btn small{ display:block; font-weight:500; font-size:.74rem; opacity:.8; font-style:italic; margin-top:2px; }
+  .btn-primary{ background:var(--coral); color:#fff; box-shadow:0 10px 24px rgba(217,105,90,.4); }
+  .btn-ghost{ background:rgba(255,255,255,.16); color:#fff; border:1px solid rgba(255,255,255,.5); }
+  .btn-soft{ background:var(--sea-2); color:#fff; }
+
+  /* ---- Grazie ---- */
+  #thanks .heart{ font-size:4.4rem; animation:beat 1.4s ease-in-out infinite; }
+  @keyframes beat{ 0%,100%{transform:scale(1)} 14%{transform:scale(1.18)} 28%{transform:scale(1)} 42%{transform:scale(1.12)} }
+  #thanks h2{ font-family:var(--serif); font-size:clamp(2rem,9vw,3rem); color:var(--sea-2); margin:.3em 0 .1em; }
+  #thanks p{ color:var(--ink); margin:.2em 0; }
+  #thanks .de{ color:var(--ink-soft); font-style:italic; }
+  #thanks .again{ margin-top:22px; font-size:.85rem; letter-spacing:.16em; text-transform:uppercase; color:var(--sea-2); opacity:.7; }
+
+  /* ---- Errore permessi ---- */
+  #permission{ background:linear-gradient(180deg,var(--sky-1),var(--sea-2)); }
+  #permission .card{ position:relative; z-index:2; background:var(--sand); border-radius:22px; padding:30px 26px;
+    max-width:420px; box-shadow:0 20px 60px rgba(0,0,0,.25); }
+  #permission h3{ font-family:var(--serif); color:var(--coral); margin:.2em 0 .4em; font-size:1.5rem; }
+  #permission p{ color:var(--ink); line-height:1.5; }
+  #permission .de{ color:var(--ink-soft); font-style:italic; }
+
+  /* ---- Admin (nascosto) ---- */
+  #admin{ background:#10343b; color:#eef3f2; justify-content:flex-start; padding-top:max(24px,env(safe-area-inset-top)); overflow:auto; }
+  #admin .admin-inner{ position:relative; z-index:2; width:100%; max-width:640px; }
+  #admin h3{ font-family:var(--serif); font-size:1.6rem; margin:6px 0 2px; color:#fff; }
+  #admin .meta{ color:#bcd3d3; font-size:.85rem; margin-bottom:16px; }
+  .admin-tools{ display:flex; flex-wrap:wrap; gap:10px; margin-bottom:18px; }
+  .admin-tools .btn{ flex:0 1 auto; padding:11px 16px; font-size:.9rem; }
+  .clip{ display:flex; align-items:center; gap:12px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1);
+    border-radius:14px; padding:10px 12px; margin-bottom:10px; }
+  .clip .num{ font-family:var(--serif); font-size:1.2rem; color:var(--sun); width:34px; text-align:center; }
+  .clip .info{ flex:1; min-width:0; text-align:left; }
+  .clip .info b{ display:block; font-size:.95rem; }
+  .clip .info span{ font-size:.78rem; color:#9fbcbc; }
+  .clip .ops{ display:flex; gap:8px; }
+  .iconbtn{ border:none; border-radius:10px; width:42px; height:42px; font-size:1.1rem; cursor:pointer;
+    background:rgba(255,255,255,.12); color:#fff; }
+  .iconbtn.danger{ background:rgba(217,105,90,.25); }
+  .empty{ text-align:center; color:#9fbcbc; padding:40px 0; font-style:italic; }
+
+  /* piccolo accesso admin invisibile sul margine */
+  .admin-edge{ position:fixed; z-index:50; top:0; right:0; width:64px; height:64px; opacity:0; }
+
+  .toast{ position:fixed; left:50%; bottom:28px; transform:translateX(-50%) translateY(20px);
+    background:var(--sea-2); color:#fff; padding:12px 18px; border-radius:999px; z-index:100; opacity:0;
+    transition:.3s; font-size:.9rem; box-shadow:0 10px 30px rgba(0,0,0,.3); pointer-events:none; }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ===== BENVENUTO ===== -->
+  <section id="welcome" class="screen active">
+    <div class="sky"></div>
+    <div class="sun-orb"></div>
+    <div class="waves">
+      <svg class="wave2" viewBox="0 0 1440 160" preserveAspectRatio="none"><path fill="#1c5f6c" d="M0 70 Q180 10 360 60 T720 60 T1080 60 T1440 60 V160 H0 Z"/></svg>
+      <svg class="wave1" viewBox="0 0 1440 160" preserveAspectRatio="none"><path fill="#0E4753" d="M0 96 Q180 50 360 90 T720 92 T1080 88 T1440 94 V160 H0 Z"/></svg>
+    </div>
+
+    <div class="stage">
+      <p class="eyebrow">Un saluto per gli sposi · Ein Gruß für das Brautpaar</p>
+      <h1 class="names">Alica <span class="amp">&amp;</span> Emanuele</h1>
+      <p class="date">28 · 06 · 2026</p>
+      <p class="place" id="placeLine">Campofelice di Roccella</p>
+
+      <div class="sun-btn-wrap">
+        <svg class="ring-svg" viewBox="0 0 104 104"><circle cx="52" cy="52" r="48" class="ring-track"/></svg>
+        <button class="sun-btn" id="startBtn" aria-label="Registra il tuo video">
+          <span class="cam">🎬</span>
+          <span class="lbl-it">Registra il tuo video</span>
+          <span class="lbl-de">Nimm dein Video auf</span>
+        </button>
+      </div>
+
+      <p class="hint">
+        Tocca, sorridi e parla. Hai <b>60 secondi</b>.
+        <span class="de">Tippen, lächeln, sprechen. Du hast 60 Sekunden.</span>
+      </p>
+    </div>
+  </section>
+
+  <!-- ===== REGISTRAZIONE ===== -->
+  <section id="record" class="screen">
+    <video class="cam-feed" id="preview" autoplay muted playsinline></video>
+    <div class="rec-overlay">
+      <div class="rec-top">
+        <span class="rec-pill"><span class="rec-dot"></span>
+          <span class="rec-time"><span id="secLeft">60</span><small>s</small></span>
+        </span>
+      </div>
+      <div class="rec-bottom">
+        <button class="stop-btn" id="stopBtn" aria-label="Ferma e salva"><span class="sq"></span></button>
+      </div>
+    </div>
+    <!-- ring countdown sovrapposto allo stop -->
+    <svg class="ring-svg" id="recRing" viewBox="0 0 104 104"
+         style="position:absolute; z-index:4; width:120px; height:120px; left:50%; bottom:calc(max(26px,env(safe-area-inset-bottom)) - 16px); transform:translateX(-50%) rotate(-90deg);">
+      <circle cx="52" cy="52" r="48" class="ring-track"/>
+      <circle cx="52" cy="52" r="48" class="ring-prog" id="recRingProg"/>
+    </svg>
+  </section>
+
+  <!-- ===== REVISIONE ===== -->
+  <section id="review" class="screen">
+    <video class="cam-review" id="playback" playsinline controls></video>
+    <div class="review-bar">
+      <div class="review-q">Va bene così?<span class="de">Passt es so?</span></div>
+      <div class="review-actions">
+        <button class="btn btn-ghost" id="redoBtn">Rifai<small>Nochmal</small></button>
+        <button class="btn btn-primary" id="saveBtn">Salva il saluto<small>Gruß speichern</small></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== GRAZIE ===== -->
+  <section id="thanks" class="screen">
+    <div class="sky"></div>
+    <div class="stage">
+      <div class="heart">💛</div>
+      <h2>Grazie di cuore!</h2>
+      <p>Il tuo saluto è al sicuro sul dispositivo.</p>
+      <p class="de">Von Herzen danke! Dein Gruß ist auf dem Gerät gespeichert.</p>
+      <p class="again">Tocca per un altro saluto · Tippen für noch einen</p>
+    </div>
+  </section>
+
+  <!-- ===== PERMESSI ===== -->
+  <section id="permission" class="screen">
+    <div class="card">
+      <h3>Serve la fotocamera 🎥</h3>
+      <p>Per lasciare il tuo video attiva l'accesso a fotocamera e microfono, poi riprova.</p>
+      <p class="de">Für dein Video brauchen wir Zugriff auf Kamera und Mikrofon. Bitte erlauben und erneut versuchen.</p>
+      <button class="btn btn-primary" id="retryBtn" style="margin-top:18px">Riprova<small>Erneut versuchen</small></button>
+    </div>
+  </section>
+
+  <!-- ===== ADMIN ===== -->
+  <section id="admin" class="screen">
+    <div class="admin-inner">
+      <h3>Saluti raccolti · Gesammelte Grüße</h3>
+      <p class="meta" id="adminMeta">—</p>
+      <div class="admin-tools">
+        <button class="btn btn-primary" id="dlAllBtn">⬇︎ Scarica tutti (ZIP)</button>
+        <button class="btn btn-soft" id="refreshBtn">↻ Aggiorna</button>
+        <button class="btn btn-ghost" id="wipeBtn" style="border-color:rgba(217,105,90,.7);color:#ffd9d2">Svuota tutto</button>
+        <button class="btn btn-soft" id="exitAdminBtn">✕ Esci</button>
+      </div>
+      <div id="clipList"></div>
+    </div>
+  </section>
+
+  <!-- bordo invisibile: tieni premuto per entrare in admin -->
+  <div class="admin-edge" id="adminEdge" aria-hidden="true"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+/* =========================================================================
+   Configurazione
+   ========================================================================= */
+const CONFIG = {
+  MAX_SECONDS: 60,
+  ADMIN_PIN: "2806",          // ← PIN per la galleria nascosta (modificalo!)
+  VIDEO_BITRATE: 2_500_000,   // ~2.5 Mbps
+  FACING: "user"              // "user" = camera frontale (selfie)
+};
+
+/* =========================================================================
+   Utilità schermate / toast
+   ========================================================================= */
+const screens = {};
+document.querySelectorAll(".screen").forEach(s => screens[s.id] = s);
+function show(id){
+  Object.values(screens).forEach(s => s.classList.remove("active"));
+  screens[id].classList.add("active");
+}
+let toastT;
+function toast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("show"), 2200);
+}
+
+/* =========================================================================
+   IndexedDB — i video restano salvati sul dispositivo
+   ========================================================================= */
+const DB_NAME = "saluti-sposi", STORE = "videos";
+function db(){
+  return new Promise((res, rej) => {
+    const r = indexedDB.open(DB_NAME, 1);
+    r.onupgradeneeded = () => {
+      if (!r.result.objectStoreNames.contains(STORE))
+        r.result.createObjectStore(STORE, { keyPath: "id" });
+    };
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
+}
+async function dbAdd(rec){
+  const d = await db();
+  return new Promise((res, rej) => {
+    const tx = d.transaction(STORE, "readwrite");
+    tx.objectStore(STORE).put(rec);
+    tx.oncomplete = res; tx.onerror = () => rej(tx.error);
+  });
+}
+async function dbAll(){
+  const d = await db();
+  return new Promise((res, rej) => {
+    const out = [];
+    const tx = d.transaction(STORE, "readonly");
+    tx.objectStore(STORE).openCursor().onsuccess = (e) => {
+      const c = e.target.result;
+      if (c){ out.push(c.value); c.continue(); } else res(out.sort((a,b)=>a.id-b.id));
+    };
+    tx.onerror = () => rej(tx.error);
+  });
+}
+async function dbDel(id){
+  const d = await db();
+  return new Promise((res, rej) => {
+    const tx = d.transaction(STORE, "readwrite");
+    tx.objectStore(STORE).delete(id);
+    tx.oncomplete = res; tx.onerror = () => rej(tx.error);
+  });
+}
+async function dbClear(){
+  const d = await db();
+  return new Promise((res, rej) => {
+    const tx = d.transaction(STORE, "readwrite");
+    tx.objectStore(STORE).clear();
+    tx.oncomplete = res; tx.onerror = () => rej(tx.error);
+  });
+}
+
+/* =========================================================================
+   Registrazione video
+   ========================================================================= */
+let stream = null, recorder = null, chunks = [], lastBlob = null, lastMime = "", lastExt = "webm";
+let raf = null, startedAt = 0;
+
+const preview   = document.getElementById("preview");
+const playback  = document.getElementById("playback");
+const secLeftEl = document.getElementById("secLeft");
+const ringProg  = document.getElementById("recRingProg");
+const RING_LEN  = 2 * Math.PI * 48;            // raggio 48 nel viewBox
+ringProg.style.strokeDasharray = RING_LEN;
+
+function pickMime(){
+  const cands = [
+    "video/mp4;codecs=avc1.42E01E,mp4a.40.2",
+    "video/mp4",
+    "video/webm;codecs=vp9,opus",
+    "video/webm;codecs=vp8,opus",
+    "video/webm"
+  ];
+  if (window.MediaRecorder)
+    for (const c of cands) if (MediaRecorder.isTypeSupported(c)) return c;
+  return "";
+}
+
+async function getCamera(){
+  if (stream) return stream;
+  stream = await navigator.mediaDevices.getUserMedia({
+    video: { facingMode: CONFIG.FACING, width: { ideal: 1280 }, height: { ideal: 720 } },
+    audio: true
+  });
+  return stream;
+}
+function stopCamera(){
+  if (stream){ stream.getTracks().forEach(t => t.stop()); stream = null; }
+}
+
+async function beginRecording(){
+  try { await getCamera(); }
+  catch(e){ console.warn(e); show("permission"); return; }
+
+  preview.srcObject = stream;
+  try { await preview.play(); } catch(_) {}
+
+  lastMime = pickMime();
+  lastExt  = lastMime.includes("mp4") ? "mp4" : "webm";
+  chunks = [];
+  try {
+    recorder = lastMime
+      ? new MediaRecorder(stream, { mimeType: lastMime, videoBitsPerSecond: CONFIG.VIDEO_BITRATE })
+      : new MediaRecorder(stream);
+  } catch(_) {
+    recorder = new MediaRecorder(stream);
+  }
+  recorder.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
+  recorder.onstop = finishRecording;
+
+  show("record");
+  recorder.start(250);
+  startedAt = Date.now();
+  tick();
+}
+
+function tick(){
+  const elapsed = (Date.now() - startedAt) / 1000;
+  const left = Math.max(0, CONFIG.MAX_SECONDS - elapsed);
+  secLeftEl.textContent = Math.ceil(left);
+  ringProg.style.strokeDashoffset = RING_LEN * (1 - left / CONFIG.MAX_SECONDS);
+  if (left <= 0){ stopRecording(); return; }
+  raf = requestAnimationFrame(tick);
+}
+
+function stopRecording(){
+  if (raf) cancelAnimationFrame(raf), raf = null;
+  if (recorder && recorder.state !== "inactive"){ try { recorder.stop(); } catch(_){} }
+}
+
+function finishRecording(){
+  const type = lastMime || (chunks[0] && chunks[0].type) || "video/webm";
+  lastBlob = new Blob(chunks, { type });
+  playback.src = URL.createObjectURL(lastBlob);
+  playback.load();
+  show("review");
+}
+
+async function saveClip(){
+  if (!lastBlob) return;
+  const id = Date.now();
+  try {
+    await dbAdd({ id, blob: lastBlob, mime: lastBlob.type, ext: lastExt, size: lastBlob.size, ts: new Date(id).toISOString() });
+  } catch(e){ console.error(e); toast("Spazio insufficiente · Speicher voll"); return; }
+  lastBlob = null;
+  stopCamera();
+  show("thanks");
+  clearTimeout(saveClip._t);
+  saveClip._t = setTimeout(() => show("welcome"), 6000);
+}
+
+function redo(){
+  lastBlob = null;
+  if (playback.src){ URL.revokeObjectURL(playback.src); playback.removeAttribute("src"); }
+  beginRecording();
+}
+
+/* =========================================================================
+   ZIP (solo "store", senza compressione) per scaricare tutti i video insieme
+   ========================================================================= */
+const CRC_TABLE = (() => {
+  const t = new Uint32Array(256);
+  for (let n = 0; n < 256; n++){
+    let c = n;
+    for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    t[n] = c >>> 0;
+  }
+  return t;
+})();
+function crc32(u8){
+  let c = 0xFFFFFFFF;
+  for (let i = 0; i < u8.length; i++) c = CRC_TABLE[(c ^ u8[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ 0xFFFFFFFF) >>> 0;
+}
+function dosTime(d){
+  const t = ((d.getHours() & 31) << 11) | ((d.getMinutes() & 63) << 5) | ((d.getSeconds() / 2) & 31);
+  const dt = (((d.getFullYear() - 1980) & 127) << 9) | (((d.getMonth() + 1) & 15) << 5) | (d.getDate() & 31);
+  return { t, dt };
+}
+async function makeZip(files){ // files: [{name, data:Uint8Array, date}]
+  const enc = new TextEncoder();
+  const locals = [], centrals = [];
+  let offset = 0;
+  for (const f of files){
+    const nameBytes = enc.encode(f.name);
+    const crc = crc32(f.data);
+    const { t, dt } = dosTime(f.date || new Date());
+    const lh = new Uint8Array(30 + nameBytes.length);
+    const dv = new DataView(lh.buffer);
+    dv.setUint32(0, 0x04034b50, true);
+    dv.setUint16(4, 20, true); dv.setUint16(6, 0x0800, true);
+    dv.setUint16(8, 0, true);  dv.setUint16(10, t, true); dv.setUint16(12, dt, true);
+    dv.setUint32(14, crc, true); dv.setUint32(18, f.data.length, true); dv.setUint32(22, f.data.length, true);
+    dv.setUint16(26, nameBytes.length, true); dv.setUint16(28, 0, true);
+    lh.set(nameBytes, 30);
+    locals.push(lh, f.data);
+
+    const ch = new Uint8Array(46 + nameBytes.length);
+    const cv = new DataView(ch.buffer);
+    cv.setUint32(0, 0x02014b50, true);
+    cv.setUint16(4, 20, true); cv.setUint16(6, 20, true);
+    cv.setUint16(8, 0x0800, true); cv.setUint16(10, 0, true);
+    cv.setUint16(12, t, true); cv.setUint16(14, dt, true);
+    cv.setUint32(16, crc, true); cv.setUint32(20, f.data.length, true); cv.setUint32(24, f.data.length, true);
+    cv.setUint16(28, nameBytes.length, true);
+    cv.setUint32(42, offset, true);
+    ch.set(nameBytes, 46);
+    centrals.push(ch);
+
+    offset += lh.length + f.data.length;
+  }
+  let cdSize = 0; centrals.forEach(c => cdSize += c.length);
+  const eocd = new Uint8Array(22);
+  const ev = new DataView(eocd.buffer);
+  ev.setUint32(0, 0x06054b50, true);
+  ev.setUint16(8, files.length, true); ev.setUint16(10, files.length, true);
+  ev.setUint32(12, cdSize, true); ev.setUint32(16, offset, true);
+  return new Blob([...locals, ...centrals, eocd], { type: "application/zip" });
+}
+
+function downloadBlob(blob, filename){
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+function fmtSize(b){ return b < 1048576 ? (b/1024).toFixed(0)+" KB" : (b/1048576).toFixed(1)+" MB"; }
+function fmtTime(iso){
+  const d = new Date(iso);
+  return d.toLocaleString("it-IT", { day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit" });
+}
+
+/* =========================================================================
+   Admin (galleria nascosta)
+   ========================================================================= */
+async function renderAdmin(){
+  const list = document.getElementById("clipList");
+  const items = await dbAll();
+  let total = 0; items.forEach(i => total += (i.size || 0));
+  let storageNote = "";
+  if (navigator.storage && navigator.storage.estimate){
+    try { const est = await navigator.storage.estimate();
+      storageNote = " · dispositivo: " + fmtSize(est.usage) + " / " + fmtSize(est.quota); } catch(_){}
+  }
+  document.getElementById("adminMeta").textContent =
+    items.length + " video · " + fmtSize(total) + storageNote;
+
+  if (!items.length){
+    list.innerHTML = '<div class="empty">Ancora nessun saluto registrato.<br>Noch keine Grüße aufgenommen.</div>';
+    return;
+  }
+  list.innerHTML = "";
+  items.forEach((it, idx) => {
+    const row = document.createElement("div");
+    row.className = "clip";
+    row.innerHTML =
+      '<div class="num">'+(idx+1)+'</div>'+
+      '<div class="info"><b>Saluto '+(idx+1)+'</b><span>'+fmtTime(it.ts)+' · '+fmtSize(it.size)+' · .'+it.ext+'</span></div>'+
+      '<div class="ops">'+
+        '<button class="iconbtn" data-act="play" title="Riproduci">▶︎</button>'+
+        '<button class="iconbtn" data-act="dl" title="Scarica">⬇︎</button>'+
+        '<button class="iconbtn danger" data-act="del" title="Elimina">🗑</button>'+
+      '</div>';
+    row.querySelector('[data-act="play"]').onclick = () => {
+      const url = URL.createObjectURL(it.blob);
+      playback.src = url; show("review");
+      // in admin nascondiamo i pulsanti salva/rifai mostrando solo il video
+      document.querySelector("#review .review-bar").style.display = "none";
+      playback.onended = () => {};
+      const back = () => { document.querySelector("#review .review-bar").style.display = ""; show("admin"); screens.review.removeEventListener("click", back); };
+      setTimeout(() => screens.review.addEventListener("click", back), 600);
+    };
+    row.querySelector('[data-act="dl"]').onclick = () =>
+      downloadBlob(it.blob, "saluto-"+String(idx+1).padStart(3,"0")+"."+it.ext);
+    row.querySelector('[data-act="del"]').onclick = async () => {
+      if (!confirm("Eliminare questo saluto? · Diesen Gruß löschen?")) return;
+      await dbDel(it.id); renderAdmin();
+    };
+    list.appendChild(row);
+  });
+}
+
+async function downloadAllZip(){
+  const items = await dbAll();
+  if (!items.length){ toast("Nessun video · Keine Videos"); return; }
+  toast("Preparo lo ZIP… · ZIP wird erstellt…");
+  const files = [];
+  for (let i = 0; i < items.length; i++){
+    const it = items[i];
+    const buf = new Uint8Array(await it.blob.arrayBuffer());
+    files.push({ name: "saluto-"+String(i+1).padStart(3,"0")+"."+it.ext, data: buf, date: new Date(it.id) });
+  }
+  const zip = await makeZip(files);
+  downloadBlob(zip, "saluti-Alica-Emanuele.zip");
+}
+
+/* =========================================================================
+   Chiosco: schermo intero, schermo sempre acceso, blocco uscita
+   ========================================================================= */
+async function goFullscreen(){
+  const el = document.documentElement;
+  try {
+    if (el.requestFullscreen) await el.requestFullscreen({ navigationUI: "hide" });
+    else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+  } catch(_){}
+}
+let wakeLock = null;
+async function keepAwake(){
+  try { if ("wakeLock" in navigator) wakeLock = await navigator.wakeLock.request("screen"); } catch(_){}
+}
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible"){ keepAwake();
+    if (screens.record.classList.contains("active") && (!recorder || recorder.state==="inactive")) show("welcome");
+  }
+});
+// avvisa se si tenta di chiudere/ricaricare (utile nel browser, non in app installata)
+window.addEventListener("beforeunload", (e) => { e.preventDefault(); e.returnValue = ""; });
+// blocca menu contestuale, zoom doppio-tap, gesti di selezione
+document.addEventListener("contextmenu", e => e.preventDefault());
+let lastTouch = 0;
+document.addEventListener("touchend", e => {
+  const now = Date.now();
+  if (now - lastTouch < 320) e.preventDefault();
+  lastTouch = now;
+}, { passive:false });
+
+/* =========================================================================
+   Accesso admin nascosto: tieni premuto l'angolo (in alto a dx) + PIN
+   ========================================================================= */
+let pressT;
+function armAdminGesture(el){
+  const start = () => { pressT = setTimeout(askPin, 1400); };
+  const cancel = () => clearTimeout(pressT);
+  el.addEventListener("touchstart", start, { passive:true });
+  el.addEventListener("mousedown", start);
+  ["touchend","touchmove","mouseup","mouseleave"].forEach(ev => el.addEventListener(ev, cancel));
+}
+function askPin(){
+  const pin = prompt("PIN");
+  if (pin === CONFIG.ADMIN_PIN){ stopRecording(); stopCamera(); show("admin"); renderAdmin(); }
+  else if (pin !== null) toast("PIN errato");
+}
+armAdminGesture(document.getElementById("adminEdge"));
+// in alternativa: tieni premuta la data nella schermata di benvenuto
+armAdminGesture(document.getElementById("placeLine"));
+
+/* =========================================================================
+   Eventi UI
+   ========================================================================= */
+document.getElementById("startBtn").addEventListener("click", async () => {
+  await goFullscreen(); await keepAwake(); beginRecording();
+});
+document.getElementById("stopBtn").addEventListener("click", stopRecording);
+document.getElementById("saveBtn").addEventListener("click", saveClip);
+document.getElementById("redoBtn").addEventListener("click", redo);
+document.getElementById("retryBtn").addEventListener("click", () => beginRecording());
+document.getElementById("refreshBtn").addEventListener("click", renderAdmin);
+document.getElementById("dlAllBtn").addEventListener("click", downloadAllZip);
+document.getElementById("exitAdminBtn").addEventListener("click", () => show("welcome"));
+document.getElementById("wipeBtn").addEventListener("click", async () => {
+  if (!confirm("Eliminare TUTTI i video dal dispositivo? · ALLE Videos löschen?")) return;
+  await dbClear(); renderAdmin(); toast("Svuotato · Geleert");
+});
+screens.thanks.addEventListener("click", () => { clearTimeout(saveClip._t); show("welcome"); });
+
+/* =========================================================================
+   Service worker (offline)
+   ========================================================================= */
+if ("serviceWorker" in navigator){
+  window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(()=>{}));
+}
+</script>
+</body>
+</html>
